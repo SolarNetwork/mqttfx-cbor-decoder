@@ -1,0 +1,64 @@
+plugins {
+	id 'checkstyle'
+    id 'java'
+    id 'eclipse'
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
+}
+
+apply plugin: 'checkstyle'
+
+repositories {
+    jcenter()
+}
+
+ext {
+	jacksonVersion = '2.9.4'
+	checkstyleVersion = '8.5'
+}
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+
+dependencies {
+    compileOnly 'de.jensd:addon-commons:1.1.0'
+    compileOnly 'de.jensd:mqttfx-payload-decoders:1.3.1'
+    compileOnly "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    
+    compile group: "com.fasterxml.jackson.dataformat", name:"jackson-dataformat-cbor", version:"${jacksonVersion}", transitive: false
+    //runtime group: "com.fasterxml.jackson.dataformat", name:"jackson-dataformat-cbor", version:"${jacksonVersion}"
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.hamcrest:hamcrest-core:1.3'
+    testImplementation 'org.hamcrest:hamcrest-library:1.3'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+jar {
+    baseName = 'mqttfx-cbor-decoder'
+    version =  version
+    manifest {
+        attributes 'Implementation-Title': 'MQTT.fx CBOR Decoder',
+                   'Implementation-Version': version
+    }
+}
+
+shadowJar {
+	//configurations = [project.configurations.runtime]
+	//dependencies {
+    //  exclude(dependency("com.fasterxml.jackson.core::${jacksonVersion}"))
+	//}
+	relocate 'com.fasterxml.jackson.dataformat.cbor', 'mqttfx.com.fasterxml.jackson.dataformat.cbor'
+	exclude 'META-INF/maven/com.fasterxml.jackson.dataformat/**'
+}
