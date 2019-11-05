@@ -71,7 +71,7 @@ public class CborPayloadDecoder extends AbstractPayloadDecoder {
       Object json = cborMapper.readValue(payload, Object.class);
       result = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
     } catch (IOException ex) {
-      result = "*** PAYLOAD IS NOT VALID JSON DATA *** \n\n" + ex.getMessage();
+      result = "*** PAYLOAD IS NOT VALID CBOR DATA *** \n\n" + ex.getMessage();
     }
     return result;
   }
