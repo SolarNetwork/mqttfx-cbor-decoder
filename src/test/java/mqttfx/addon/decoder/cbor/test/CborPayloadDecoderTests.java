@@ -17,9 +17,12 @@
 
 package mqttfx.addon.decoder.cbor.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -57,7 +60,30 @@ public class CborPayloadDecoderTests {
 
     // THEN
     assertThat("CBOR decoded to pretty string", result,
-        equalTo("{\n  \"foo\" : \"bar\",\n  \"bim\" : 123\n}"));
+        equalTo("{\n  \"bim\" : 123,\n  \"foo\" : \"bar\"\n}"));
+  }
+
+  @Test
+  public void decodeCbor_createdDate() throws Exception {
+    // GIVEN
+    final long now = System.currentTimeMillis();
+    ObjectMapper mapper = cborMapper();
+    Map<String, Object> data = new LinkedHashMap<>(2);
+    data.put("foo", "bar");
+    data.put("created", now);
+    byte[] cbor = mapper.writeValueAsBytes(data);
+
+    CborPayloadDecoder decoder = new CborPayloadDecoder();
+
+    // WHEN
+    String result = decoder.decode(cbor);
+
+    // THEN
+    assertThat("CBOR decoded to pretty string", result,
+        equalTo("{\n  \"created\" : " + now + ",\n  \"created_date_\" : \""
+            + DateTimeFormatter.ISO_ZONED_DATE_TIME
+                .format(Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()))
+            + "\",\n  \"foo\" : \"bar\"\n}"));
   }
 
 }

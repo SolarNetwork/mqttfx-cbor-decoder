@@ -18,6 +18,11 @@
 package mqttfx.addon.decoder.cbor;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
@@ -68,8 +73,23 @@ public class CborPayloadDecoder extends AbstractPayloadDecoder {
   public String decode(byte[] payload) {
     String result;
     try {
-      Object json = cborMapper.readValue(payload, Object.class);
-      result = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+      Object obj = cborMapper.readValue(payload, Object.class);
+      if (obj instanceof Map<?, ?>) {
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        Map<String, Object> m = (Map) obj;
+        if (m.get("created") instanceof Number) {
+          try {
+            m.put("created_date_",
+                DateTimeFormatter.ISO_ZONED_DATE_TIME
+                    .format(Instant.ofEpochMilli(((Number) m.get("created")).longValue())
+                        .atZone(ZoneId.systemDefault())));
+          } catch (Exception e) {
+            // ignore
+          }
+        }
+        obj = new TreeMap<String, Object>(m);
+      }
+      result = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
     } catch (IOException ex) {
       result = "*** PAYLOAD IS NOT VALID CBOR DATA *** \n\n" + ex.getMessage();
     }
